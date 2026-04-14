@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Select Floor</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+
+background-image:url("{{ url_for('static', filename='bg.jpg') }}");
+background-size:cover;
+background-position:center;
+height:100vh;
+
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.container{
+text-align:center;
+}
+
+h1{
+color:white;
+margin-bottom:40px;
+}
+
+.floor-card{
+display:inline-block;
+width:200px;
+height:120px;
+margin:20px;
+border-radius:12px;
+
+background:rgba(0,0,0,0.7);
+color:white;
+
+font-size:22px;
+line-height:120px;
+
+text-decoration:none;
+
+transition:0.3s;
+}
+
+.floor-card:hover{
+transform:scale(1.1);
+background:#2196F3;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Select Floor</h1>
+
+<a href="/floor5" class="floor-card">🏢 5th Floor</a>
+
+<a href="/floor6" class="floor-card">🏢 6th Floor</a>
+
+</div>
+
+</body>
+</html>

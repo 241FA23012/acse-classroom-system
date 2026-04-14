@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Loading</title>
+
+<style>
+
+body{
+margin:0;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+font-family:Arial;
+
+background-image: url("{{ url_for('static', filename='bg.jpg') }}");
+background-size: cover;
+background-position: center;
+color:white;
+}
+
+.loader{
+text-align:center;
+}
+
+.spinner{
+border:6px solid #f3f3f3;
+border-top:6px solid #3498db;
+border-radius:50%;
+width:60px;
+height:60px;
+animation: spin 1s linear infinite;
+margin:auto;
+}
+
+@keyframes spin{
+0%{transform:rotate(0deg);}
+100%{transform:rotate(360deg);}
+}
+
+</style>
+
+<script>
+
+setTimeout(function(){
+window.location.href="/home";
+},2000)
+
+</script>
+
+</head>
+
+<body>
+
+<div class="loader">
+
+<h1>ACSE Classroom System</h1>
+
+<br>
+
+<div class="spinner"></div>
+
+<p>Loading system...</p>
+
+</div>
+
+</body>
+</html>

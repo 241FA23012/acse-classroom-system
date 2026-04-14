@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>ACSE Classroom System</title>
+
+<style>
+
+body{
+margin:0;
+font-family: Arial;
+
+background-image: url("{{ url_for('static', filename='bg.jpg') }}");
+background-size: cover;
+background-position: center;
+height:100vh;
+
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.box{
+background: rgba(0,0,0,0.6);
+padding:40px;
+border-radius:10px;
+text-align:center;
+color:white;
+}
+
+a{
+display:inline-block;
+margin-top:20px;
+padding:15px 25px;
+background:#2196F3;
+color:white;
+text-decoration:none;
+border-radius:5px;
+font-size:20px;
+}
+
+a:hover{
+background:#0b7dda;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="box">
+
+<h1>Classroom Availability Detection System</h1>
+
+<a href="/acse">ACSE Department</a>
+
+</div>
+
+</body>
+</html>
