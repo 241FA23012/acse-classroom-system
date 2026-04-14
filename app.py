@@ -3,29 +3,12 @@ import sqlite3
 from datetime import datetime
 import pandas as pd
 import re
+import os
 
 app = Flask(__name__)
 
-# -------- 5TH FLOOR CLASSROOMS --------
-FIFTH_FLOOR_ROOMS = [
-"501","502","503","504","505",
-"506","507","508",
-"511","512","513",
-"514","515","516","517","518"
-]
-
-# -------- 6TH FLOOR CLASSROOMS --------
-SIXTH_FLOOR_ROOMS = [
-"601A","601B","602","604","605","606","607","608",
-"611","612","613",
-"614","614A","614B",
-"615","616","617","618",
-"619A","619B"
-]
-
-# ---------------- DATABASE INIT ----------------
+# ---------------- INIT DB + LOAD DATA (IMPORTANT FOR RENDER) ----------------
 def init_db():
-
     conn = sqlite3.connect("acse.db")
     cursor = conn.cursor()
 
@@ -45,15 +28,15 @@ def init_db():
     conn.close()
 
 
-# ---------------- IMPORT EXCEL DATA ----------------
 def insert_sample_data():
-
     conn = sqlite3.connect("acse.db")
     cursor = conn.cursor()
 
     cursor.execute("DELETE FROM timetable")
 
-    excel_file = "timetable.xlsx"
+    # ✅ FIXED PATH
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    excel_file = os.path.join(BASE_DIR, "timetable.xlsx")
 
     time_slots = [
         ("08:15","09:05"),
@@ -85,18 +68,11 @@ def insert_sample_data():
             day_cell = first_cell.upper()
 
             valid_days = {
-                "MON":"MON",
-                "TUE":"TUE",
-                "WED":"WED",
-                "THU":"THU",
-                "FRI":"FRI",
-                "SAT":"SAT",
-                "MONDAY":"MON",
-                "TUESDAY":"TUE",
-                "WEDNESDAY":"WED",
-                "THURSDAY":"THU",
-                "FRIDAY":"FRI",
-                "SATURDAY":"SAT"
+                "MON":"MON","TUE":"TUE","WED":"WED",
+                "THU":"THU","FRI":"FRI","SAT":"SAT",
+                "MONDAY":"MON","TUESDAY":"TUE",
+                "WEDNESDAY":"WED","THURSDAY":"THU",
+                "FRIDAY":"FRI","SATURDAY":"SAT"
             }
 
             if day_cell in valid_days and current_section:
@@ -116,15 +92,10 @@ def insert_sample_data():
                         room = "N/A"
 
                         for line in lines:
-
                             match = re.search(r'\b\d{3}[A-Z]?\b', line)
-
                             if match:
-
                                 possible_room = match.group()
-
-                                if possible_room in FIFTH_FLOOR_ROOMS or possible_room in SIXTH_FLOOR_ROOMS:
-
+                                if possible_room:
                                     room = possible_room
                                     break
 
@@ -147,19 +118,39 @@ def insert_sample_data():
     conn.close()
 
 
-# ---------------- HOME ----------------
+# 🔥 IMPORTANT: RUN ON START (FOR RENDER)
+init_db()
+insert_sample_data()
+
+
+# -------- ROOMS --------
+FIFTH_FLOOR_ROOMS = [
+"501","502","503","504","505",
+"506","507","508",
+"511","512","513",
+"514","515","516","517","518"
+]
+
+SIXTH_FLOOR_ROOMS = [
+"601A","601B","602","604","605","606","607","608",
+"611","612","613",
+"614","614A","614B",
+"615","616","617","618",
+"619A","619B"
+]
+
+
+# -------- ROUTES --------
 @app.route("/")
 def home():
     return render_template("home.html")
 
 
-# ---------------- ACSE PAGE ----------------
 @app.route("/acse")
 def acse():
     return render_template("floors.html")
 
 
-# ---------------- FLOOR DASHBOARD FUNCTION ----------------
 def generate_dashboard(room_list):
 
     conn = sqlite3.connect("acse.db")
@@ -174,27 +165,20 @@ def generate_dashboard(room_list):
 
         cursor.execute("""
         SELECT section,subject FROM timetable
-        WHERE room=?
-        AND day=?
-        AND start_time<=?
-        AND end_time>?
+        WHERE room=? AND day=? AND start_time<=? AND end_time>?
         """,(room,current_day,current_time,current_time))
 
         current_class = cursor.fetchone()
 
         cursor.execute("""
         SELECT section,subject,start_time FROM timetable
-        WHERE room=?
-        AND day=?
-        AND start_time>?
-        ORDER BY start_time ASC
-        LIMIT 1
+        WHERE room=? AND day=? AND start_time>?
+        ORDER BY start_time ASC LIMIT 1
         """,(room,current_day,current_time))
 
         next_class = cursor.fetchone()
 
         room_status_list.append({
-
             "room":room,
             "occupied": True if current_class else False,
             "section": current_class[0] if current_class else "",
@@ -202,7 +186,6 @@ def generate_dashboard(room_list):
             "next_section": next_class[0] if next_class else "",
             "next_subject": next_class[1] if next_class else "",
             "next_time": next_class[2] if next_class else ""
-
         })
 
     conn.close()
@@ -215,7 +198,6 @@ def generate_dashboard(room_list):
     )
 
 
-# ---------------- FLOOR ROUTES ----------------
 @app.route("/floor5")
 def floor5():
     return generate_dashboard(FIFTH_FLOOR_ROOMS)
@@ -226,11 +208,6 @@ def floor6():
     return generate_dashboard(SIXTH_FLOOR_ROOMS)
 
 
-# ---------------- MAIN ----------------
-# ---------------- MAIN ----------------
+# -------- MAIN --------
 if __name__ == "__main__":
-
-    init_db()
-    insert_sample_data()
-
-    app.run(host="0.0.0.0", port=10000, debug=True)
+    app.run(host="0.0.0.0", port=10000)
