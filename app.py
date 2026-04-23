@@ -4,12 +4,18 @@ from datetime import datetime
 import pandas as pd
 import re
 import os
+import pytz   # ✅ timezone fix
 
 app = Flask(__name__)
 
-# ---------------- INIT DB + LOAD DATA (IMPORTANT FOR RENDER) ----------------
+# ---------------- PATH SETUP ----------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "acse.db")
+EXCEL_PATH = os.path.join(BASE_DIR, "timetable.xlsx")
+
+# ---------------- INIT DB ----------------
 def init_db():
-    conn = sqlite3.connect("acse.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -27,16 +33,12 @@ def init_db():
     conn.commit()
     conn.close()
 
-
+# ---------------- LOAD DATA ----------------
 def insert_sample_data():
-    conn = sqlite3.connect("acse.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     cursor.execute("DELETE FROM timetable")
-
-    # ✅ FIXED PATH
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    excel_file = os.path.join(BASE_DIR, "timetable.xlsx")
 
     time_slots = [
         ("08:15","09:05"),
@@ -49,10 +51,9 @@ def insert_sample_data():
         ("15:20","16:05"),
     ]
 
-    sheets = pd.read_excel(excel_file, sheet_name=None, header=None)
+    sheets = pd.read_excel(EXCEL_PATH, sheet_name=None, header=None)
 
     for sheet_name, df in sheets.items():
-
         current_section = None
 
         for row_index in range(len(df)):
@@ -61,7 +62,6 @@ def insert_sample_data():
 
             if any(branch in first_cell.upper() for branch in
                    ["AIML","CSE","DS","CSBS","IT","ECE"]):
-
                 current_section = first_cell
                 continue
 
@@ -94,10 +94,8 @@ def insert_sample_data():
                         for line in lines:
                             match = re.search(r'\b\d{3}[A-Z]?\b', line)
                             if match:
-                                possible_room = match.group()
-                                if possible_room:
-                                    room = possible_room
-                                    break
+                                room = match.group()
+                                break
 
                         start_time,end_time = time_slots[col_index-1]
 
@@ -117,13 +115,11 @@ def insert_sample_data():
     conn.commit()
     conn.close()
 
-
-# 🔥 IMPORTANT: RUN ON START (FOR RENDER)
+# ---------------- INIT ON START ----------------
 init_db()
 insert_sample_data()
 
-
-# -------- ROOMS --------
+# ---------------- ROOMS ----------------
 FIFTH_FLOOR_ROOMS = [
 "501","502","503","504","505",
 "506","507","508",
@@ -139,25 +135,29 @@ SIXTH_FLOOR_ROOMS = [
 "619A","619B"
 ]
 
-
-# -------- ROUTES --------
+# ---------------- ROUTES ----------------
 @app.route("/")
 def home():
     return render_template("home.html")
-
 
 @app.route("/acse")
 def acse():
     return render_template("floors.html")
 
-
+# ---------------- DASHBOARD ----------------
 def generate_dashboard(room_list):
 
-    conn = sqlite3.connect("acse.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    current_day = datetime.now().strftime("%a").upper()
-    current_time = datetime.now().strftime("%H:%M")
+    # ✅ FIXED TIME (IST)
+    IST = pytz.timezone('Asia/Kolkata')
+    now = datetime.now(IST)
+
+    current_day = now.strftime("%a").upper()
+    current_time = now.strftime("%H:%M")
+
+    print("DEBUG:", current_day, current_time)  # optional
 
     room_status_list = []
 
@@ -197,17 +197,15 @@ def generate_dashboard(room_list):
         current_time=current_time
     )
 
-
+# ---------------- FLOOR ROUTES ----------------
 @app.route("/floor5")
 def floor5():
     return generate_dashboard(FIFTH_FLOOR_ROOMS)
-
 
 @app.route("/floor6")
 def floor6():
     return generate_dashboard(SIXTH_FLOOR_ROOMS)
 
-
-# -------- MAIN --------
+# ---------------- MAIN ----------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
